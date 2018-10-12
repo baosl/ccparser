@@ -202,6 +202,30 @@ class Ccparser:
                     break
         return filter_list         
     
+    def export_project_tree(self, file_name, project_id):
+        dir_dict = dict()
+        for t in self.clone_tuple_dict.values():
+            if t.project_id == project_id:          
+                project_set = set()
+                dirname = os.path.dirname(t.file_path)
+                if dir_dict.get(dirname) is None:
+                    dir_dict[dirname] = dict()
+                    dir_dict[dirname][0] = 0
+                dir_dict[dirname][0] +=1   
+                for tt in t.clone_set:
+                    if tt.project_id != project_id:
+                        project_set.add(tt.project_id)
+
+                for pid in project_set:
+                    if dir_dict[dirname].get(pid) is None:
+                        dir_dict[dirname][pid] = 0
+                    dir_dict[dirname][pid] += 1                
+        with open(file_name,'w') as f:
+            dir_list = sorted(dir_dict.items(), key = lambda item:item[0])
+            for (k,v) in dir_list:
+                line = '%s:%s\n' % (k,v)
+                f.write(line)
+                
 if __name__ == '__main__':
     sysstr = platform.system()
     if sysstr == "Windows":
@@ -220,6 +244,7 @@ if __name__ == '__main__':
     funclone = os.path.join(ccroot, 'unclone.txt')
     fclones = os.path.join(ccroot, 'clones.txt')
     ffilter = os.path.join(ccroot, 'filter.txt')
+    ftree = os.path.join(ccroot, 'tree.txt')
 
     parser = Ccparser()
     parser.load_project_list(fproject_list)
@@ -241,10 +266,10 @@ if __name__ == '__main__':
         parser.export_unclone_file(funclone,50,500000)
     if not os.path.exists(fclones):  
         parser.export_clone_set(fclones, parser.clone_set_sorted_list)
-    project_set = [26,27]
-    clone_set_list = parser.clone_filter_by_project(project_set)
-    parser.export_clone_set(ffilter, clone_set_list)
-    
+#     project_set = [26,27]
+#     clone_set_list = parser.clone_filter_by_project(project_set)
+#     parser.export_clone_set(ffilter, clone_set_list)
+    parser.export_project_tree(ftree, 27)
     
     
     
