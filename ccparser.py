@@ -8,6 +8,7 @@ class CloneTuple:
         self.project_id = project_id
         self.file_id = file_id
         self.is_clone = False
+        self.clone_set = set([self])
         
     def get_key(self):
         return (self.project_id,self.file_id)
@@ -79,7 +80,6 @@ class Ccparser:
         return t
     
     def load_clone_pairs(self, file_name):
-        set_dict = dict()
         with open(file_name) as f:
             for line in f:
                 line = line.strip()
@@ -92,30 +92,18 @@ class Ccparser:
                 t1 = self.find_tuple(pid,fid)
                 t0.is_clone = True
                 t1.is_clone = True
-                if set_dict.get(t0) == None:
-                    if set_dict.get(t1) == None:
-                        s = set([t0,t1])
-                        set_dict[t0] = set_dict[t1] = s
-                        self.clone_set_list.append(s)
-                    else:
-                        s = set_dict[t1]
-                        s.add(t0)
-                        set_dict[t0] = s                    
-                elif set_dict.get(t1) == None:
-                    s = set_dict[t0]
-                    s.add(t1)
-                    set_dict[t1] = s
-                else:
-                    s0 = set_dict[t0]
-                    s1 = set_dict[t1]
-                    if s0 != s1:
-                        s = s0 | s1
+                                
+                s0 = t0.clone_set
+                s1 = t1.clone_set
+                if s0 != s1:
+                    s = s0 | s1
+                    if s0 in self.clone_set_list:
                         self.clone_set_list.remove(s0)
+                    if s1 in self.clone_set_list:    
                         self.clone_set_list.remove(s1)
-                        self.clone_set_list.append(s)
-                        for k in s:
-                            set_dict[k] = s
-                
+                    self.clone_set_list.append(s)
+                    for t in s:
+                        t.clone_set = s                
 
     def save_clone_sets(self, file_name):
         with open(file_name,'w') as f:
@@ -154,6 +142,7 @@ class Ccparser:
                     t = self.find_tuple(pid,fid)
                     t.is_clone = True
                     clone_set.add(t)
+                    t.clone_set = clone_set
                 self.clone_set_list.append(clone_set)
     
     def clone_set_sort(self):
@@ -230,7 +219,7 @@ if __name__ == '__main__':
     fsorted = os.path.join(ccroot, 'sorted.txt')
     funclone = os.path.join(ccroot, 'unclone.txt')
     fclones = os.path.join(ccroot, 'clones.txt')
-    ffilter = os.path.join(ccroot, 'filter_c.txt')
+    ffilter = os.path.join(ccroot, 'filter.txt')
 
     parser = Ccparser()
     parser.load_project_list(fproject_list)
